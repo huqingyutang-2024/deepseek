@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>智能医疗问诊平台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --spacing-system: 12px;
+            --primary-green: #06BE5D;
+            --bg-grey: #F0F0F0;
+            --error-red: #FF4444;
+            --border-radius: 18px;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            margin: 0;
+            background: var(--bg-grey);
+            min-height: 100vh;
+        }
+
+        .chat-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: var(--spacing-system);
+            padding-bottom: 100px;
+            box-sizing: border-box;
+        }
+
+        .message-row {
+            display: flex;
+            margin: 12px 0;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease;
+            gap: 8px;
+        }
+
+        .user-message {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .message-bubble {
+            max-width: calc(100% - 60px);
+            min-width: 40px;
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            line-height: 1.5;
+            position: relative;
+            font-size: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            word-break: break-word;
+        }
+
+        .bot-bubble {
+            background: #FFFFFF;
+            border: 1px solid #e5e5e5;
+        }
+
+        .bot-bubble::before {
+            content: "";
+            position: absolute;
+            left: -6px;
+            top: 12px;
+            width: 0;
+            height: 0;
+            border: 6px solid transparent;
+            border-right-color: #FFFFFF;
+            border-left: 0;
+        }
+
+        .user-bubble {
+            background: #9EEB6C;
+            color: #000;
+        }
+
+        .user-bubble::after {
+            content: "";
+            position: absolute;
+            right: -6px;
+            top: 12px;
+            width: 0;
+            height: 0;
+            border: 6px solid transparent;
+            border-left-color: #9EEB6C;
+            border-right: 0;
+        }
+
+        .input-area {
+            position: fixed;
+            bottom: var(--spacing-system);
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 2 * var(--spacing-system));
+            max-width: 800px;
+            background: #f8f8f8;
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 8px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 16px;
+            min-height: 40px;
+            resize: none;
+            box-sizing: border-box;
+        }
+
+        #sendBtn {
+            background: var(--primary-green);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 24px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        #sendBtn:active {
+            opacity: 0.8;
+        }
+
+        .timestamp {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin: 16px 0;
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            padding: 8px 16px;
+            background: #fff;
+            border-radius: 18px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            margin: 0 2px;
+            background: #ddd;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --spacing-system: 8px;
+            }
+
+            .message-bubble {
+                max-width: calc(100% - 50px);
+                font-size: 15px;
+            }
+
+            .avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .input-area {
+                width: 96%;
+                padding: 12px;
+                bottom: 0;
+            }
+
+            #messageInput {
+                font-size: 15px;
+                padding: 8px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .message-bubble {
+                max-width: calc(100% - 45px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div id="chatHistory">
+            <div class="timestamp">今天 09:30</div>
+            <div class="message-row">
+                <div class="avatar bot-avatar">
+                    <img src="images/12.png" alt="AI Avatar">
+                </div>
+                <div class="message-bubble bot-bubble">
+                    您好，我是Deepseek中医智能体，随时为您解答健康问题。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="messageInput" placeholder="输入您的健康问题...">
+        <button id="sendBtn">发送</button>
+    </div>
+
+    <script>
+        // API配置
+        const API_CONFIG = {
+            endpoint: 'https://yuanqi.tencent.com/openapi/v1/agent/chat/completions',
+            assistant_id: 'usI8myVz7UMd',
+            token: 'MSVEDpnrpJWoAVes8TmIVaste0oLR9IC'
+        };
+
+        // 打字机效果类
+        class Typewriter {
+            constructor(element) {
+                this.element = element;
+                this.chars = [];
+                this.interval = null;
+            }
+
+            type(text, speed = 32) {
+                return new Promise(resolve => {
+                    let index = 0;
+                    this.interval = setInterval(() => {
+                        if (index >= text.length) {
+                            clearInterval(this.interval);
+                            resolve();
+                            return;
+                        }
+                        this.chars.push(text.charAt(index));
+                        this.element.textContent = this.chars.join('');
+                        index++;
+                        this.scrollToBottom();
+                    }, speed);
+                });
+            }
+        }
+
+        // 消息处理函数
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addUserMessage(message);
+            input.value = '';
+            adjustInputHeight();
+            
+            try {
+                const typingRow = createTypingIndicator();
+                
+                const response = await fetch(API_CONFIG.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_CONFIG.token}`,
+                        'X-Source': 'openapi',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "hunyuan-turbo",
+                        assistant_id: API_CONFIG.assistant_id,
+                        messages: [{
+                            role: "user",
+                            content: [{ type: "text", text: message }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) throw new Error(`请求失败: ${response.status}`);
+                
+                const data = await response.json();
+                typingRow.remove();
+                
+                if (data.choices?.[0]?.message?.content) {
+                    await showBotResponse(data.choices[0].message.content);
+                } else {
+                    throw new Error('无效的响应格式');
+                }
+            } catch (error) {
+                showError(`服务暂时不可用: ${error.message}`);
+            }
+        }
+
+        // 辅助函数
+        function addUserMessage(content) {
+            const row = document.createElement('div');
+            row.className = 'message-row user-message';
+            row.innerHTML = `
+                <div class="avatar user-avatar">🐸</div>
+                <div class="message-bubble user-bubble">${content}</div>
+            `;
+            document.getElementById('chatHistory').appendChild(row);
+            scrollToBottom();
+        }
+
+        async function showBotResponse(content) {
+            const row = document.createElement('div');
+            row.className = 'message-row bot-message';
+            row.innerHTML = `
+                <div class="avatar bot-avatar">
+                    <img src="images/12.png" alt="AI Avatar">
+                </div>
+                <div class="message-bubble bot-bubble"></div>
+            `;
+            document.getElementById('chatHistory').appendChild(row);
+            const bubble = row.querySelector('.bot-bubble');
+            const typewriter = new Typewriter(bubble);
+            await typewriter.type(content);
+            scrollToBottom();
+        }
+
+        function createTypingIndicator() {
+            const row = document.createElement('div');
+            row.className = 'message-row bot-message';
+            row.innerHTML = `
+                <div class="avatar bot-avatar">
+                    <img src="images/12.png" alt="AI Avatar">
+                </div>
+                <div class="message-bubble bot-bubble">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot" style="animation-delay: 0.2s"></div>
+                        <div class="typing-dot" style="animation-delay: 0.4s"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('chatHistory').appendChild(row);
+            scrollToBottom();
+            return row;
+        }
+
+        function scrollToBottom() {
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        function adjustInputHeight() {
+            const input = document.getElementById('messageInput');
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
+        }
+
+        // 时间更新功能
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timestampDiv = document.querySelector('.timestamp');
+            timestampDiv.textContent = `今天 ${hours}:${minutes}`;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // 事件绑定
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('input', adjustInputHeight);
+        document.getElementById('messageInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+    <script>
+        window.parent.postMessage({ type: 'iframeHeight', height: document.body.scrollHeight }, '*');
+    </script>
+</body>
+</html>
